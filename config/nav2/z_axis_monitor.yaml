@@ -1,0 +1,10 @@
+z_axis_monitor:
+  ros__parameters:
+    pointcloud_topic: /cloud_registered
+    obstacle_z_topic: /obstacle/z_status
+    check_range: [-2.0, 2.0]
+    point_density_threshold: 15
+    min_z_response: -0.3
+    max_z_response: 0.3
+    clear_timeout: 1.0
+    publish_rate: 5.0

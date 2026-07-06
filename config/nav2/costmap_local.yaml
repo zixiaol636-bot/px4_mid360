@@ -1,0 +1,44 @@
+# Nav2 局部代价地图 — MID360 点云实时障碍层
+# 障碍层: 3D 点云 → Z轴裁剪 → 2D投影
+# 滚动窗口跟随无人机
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      use_sim_time: false
+      global_frame: odom
+      robot_base_frame: base_link
+      update_frequency: 5.0
+      publish_frequency: 2.0
+      static_map: false
+      rolling_window: true
+      width: 20                    # 20m × 20m window [m]
+      height: 20
+      resolution: 0.1              # 0.1m/cell
+
+      plugins: ["obstacle_layer", "inflation_layer"]
+
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        observation_sources: mid360_scan
+
+        mid360_scan:
+          topic: /cloud_registered         # FAST-LIO2 registered point cloud
+          sensor_frame: lidar_frame
+          data_type: PointCloud2
+          marking: true                    # mark occupied cells
+          clearing: true                   # clear on rolling window
+          min_obstacle_height: -1.0        # consider pts below flight height [m]
+          max_obstacle_height: 2.0         # consider pts above flight height [m]
+          obstacle_max_range: 12.0         # max detection range [m]
+          raytrace_max_range: 15.0
+          inf_is_valid: false
+          voxel_filter: true
+          voxel_min_points: 3             # min pts per voxel to mark occupied
+          clearing_radius: 12.0
+          observation_persistence: 2.0     # keep obs for 2s before clearing [s]
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        inflation_radius: 0.3
+        cost_scaling_factor: 3.0

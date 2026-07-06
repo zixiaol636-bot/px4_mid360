@@ -1,0 +1,60 @@
+# FAST-LIO2 配置 — Livox MID360 定位模式
+# 继承建图行为，加载预建地图
+# 基于 Ericsii/FAST_LIO_ROS2
+
+common:
+  lid_topic: "/livox/lidar"
+  imu_topic: "/livox/imu"
+  time_sync: false
+  time_offset_lidar_to_imu: 0.0
+
+preprocess:
+  lidar_type: 1
+  scan_line: 4
+  timestamp_unit: 1
+  blind: 0.3                 # smaller blind zone for localization
+  point_filter_num: 1
+  feature_extract_en: true
+
+mapping:
+  acc_cov: 0.5
+  gyr_cov: 0.1
+  b_acc_cov: 0.0001
+  b_gyr_cov: 0.0001
+  fov_degree: 360
+  det_range: 80.0
+  extrinsic_est_en: false
+  extrinsic_T: [0.0, 0.0, 0.0]
+  extrinsic_R: [1, 0, 0,
+                 0, 1, 0,
+                 0, 0, 1]
+  voxel_size: 0.5
+  max_iteration: 3
+  filter_size_surf: 0.2
+  filter_size_map: 0.2
+  cube_side_length: 1000
+  runtime_pos_log_enable: true   # log position for debugging
+
+localization:
+  enabled: true
+  map_path: ""                    # set via launch argument
+  map_voxel_size: 0.2             # downsample loaded map [m]
+  initial_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]  # x,y,z,qx,qy,qz,qw
+
+  # ICP relocalization
+  icp_max_correspondence_dist: 1.0    # [m]
+  icp_max_iterations: 50
+  icp_fitness_threshold: 0.15         # convergence criterion
+  icp_frequency: 0.5                  # [Hz] — run ICP every 2 seconds
+
+imu:
+  imu_freq: 200
+  acc_norm: 9.81
+  gyr_norm: 1.0
+
+publish:
+  path_en: true
+  path_pub_rate: 20.0
+  scan_publish_en: true
+  scan_body_frame: "lidar_frame"
+  dense_publish_en: false

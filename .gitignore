@@ -1,0 +1,37 @@
+# Build artifacts
+build/
+install/
+log/
+*.o
+*.obj
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ROS2
+*.d
+*.so
+
+# Data (large files)
+bags/*.mcap
+bags/*.bag
+bags/*.db3
+maps/*.pcd
+maps/*.pgm
+maps/*.yaml
+
+# Keep example waypoints
+!config/waypoints/*.yaml
+
+# OS
+.DS_Store
+Thumbs.db

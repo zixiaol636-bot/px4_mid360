@@ -1,0 +1,65 @@
+frame_id: map
+default_hover_time: 1.5
+default_acceptance_radius: 0.8
+return_home: true
+
+start_pose:
+  position: [-8.0, 0.0, 2.5]
+  yaw_deg: 0.0
+
+# Sample layout for six continuous side-by-side indoor warehouses.
+# Replace these dimensions and centers with your real warehouse geometry.
+warehouses:
+  - name: warehouse_1
+    center: [0.0, 20.0]
+    length: 18.0
+    width: 6.0
+    yaw_deg: 90.0
+    altitude: 2.5
+    lane_spacing: 1.8
+    margin: 0.8
+
+  - name: warehouse_2
+    center: [8.0, 20.0]
+    length: 18.0
+    width: 6.0
+    yaw_deg: 90.0
+    altitude: 2.5
+    lane_spacing: 1.8
+    margin: 0.8
+
+  - name: warehouse_3
+    center: [16.0, 20.0]
+    length: 18.0
+    width: 6.0
+    yaw_deg: 90.0
+    altitude: 2.5
+    lane_spacing: 1.8
+    margin: 0.8
+
+  - name: warehouse_4
+    center: [24.0, 20.0]
+    length: 18.0
+    width: 6.0
+    yaw_deg: 90.0
+    altitude: 2.5
+    lane_spacing: 1.8
+    margin: 0.8
+
+  - name: warehouse_5
+    center: [32.0, 20.0]
+    length: 18.0
+    width: 6.0
+    yaw_deg: 90.0
+    altitude: 2.5
+    lane_spacing: 1.8
+    margin: 0.8
+
+  - name: warehouse_6
+    center: [40.0, 20.0]
+    length: 18.0
+    width: 6.0
+    yaw_deg: 90.0
+    altitude: 2.5
+    lane_spacing: 1.8
+    margin: 0.8

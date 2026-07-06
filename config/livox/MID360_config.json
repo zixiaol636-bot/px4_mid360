@@ -1,0 +1,14 @@
+{
+  "mid360_config": {
+    "host_ip": "192.168.1.50",
+    "lidar_ip": "192.168.1.100",
+    "data_port": 56101,
+    "cmd_port": 56100,
+    "imu_data_port": 56201,
+    "pointcloud_topic": "/livox/lidar",
+    "imu_topic": "/livox/imu",
+    "publish_frequency": 10.0,
+    "multi_topic": true,
+    "xfer_protocol": 1
+  }
+}

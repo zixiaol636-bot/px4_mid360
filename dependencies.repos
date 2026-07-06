@@ -1,0 +1,42 @@
+repositories:
+  # Livox SDK2 (must compile and install first)
+  Livox-SDK2:
+    type: git
+    url: https://github.com/Livox-SDK/Livox-SDK2.git
+    version: master
+
+  # Livox ROS2 driver
+  livox_ros_driver2:
+    type: git
+    url: https://github.com/Livox-SDK/livox_ros_driver2.git
+    version: master
+
+  # FAST-LIO2 ROS2 (primary: Ericsii, largest community)
+  fast_lio2:
+    type: git
+    url: https://github.com/Caltech-AMBER/FAST_LIO_ROS2.git
+    version: main
+
+  # FAST-LIO2 alternative (MIT, more actively updated 2025)
+  # fast_lio2:
+  #   type: git
+  #   url: https://github.com/MIT-SPARK/spark-fast-lio.git
+  #   version: main
+
+  # MAVROS2
+  mavros2:
+    type: git
+    url: https://github.com/mavlink/mavros.git
+    version: ros2
+
+  # Nav2 (navigation2)
+  navigation2:
+    type: git
+    url: https://github.com/ros-navigation/navigation2.git
+    version: humble
+
+  # LiDAR-IMU extrinsic calibration
+  lidar_imu_init:
+    type: git
+    url: https://github.com/hku-mars/LiDAR_IMU_Init.git
+    version: main

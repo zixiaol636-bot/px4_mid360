@@ -1,0 +1,24 @@
+# MAVROS2 configuration for PX4 offboard control
+
+fcu:
+  url: "/dev/ttyACM0:921600"
+  gcs_url: "udp://:14550@localhost:14550"
+
+plugin_allowlist:
+  - "sys_status"
+  - "sys_time"
+  - "command"
+  - "param"
+  - "rc_io"
+  - "local_position"
+  - "global_position"
+  - "home_position"
+  - "imu_pub"
+  - "altitude"
+  - "vision_pose_estimate"
+  - "setpoint_raw"
+  - "setpoint_position"
+  - "setpoint_velocity"
+  - "manual_control"
+  - "battery"
+  - "extended_state"

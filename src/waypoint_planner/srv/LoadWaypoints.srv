@@ -1,0 +1,7 @@
+# LoadWaypoints.srv
+# 请求：无需输入 — 从配置的 YAML 文件加载
+---
+# 响应
+waypoint_planner/WaypointArray waypoints
+bool success
+string message

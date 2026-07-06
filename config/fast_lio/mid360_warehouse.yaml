@@ -1,0 +1,56 @@
+# FAST-LIO2 配置 — Livox MID360 建图模式
+# 基于 Ericsii/FAST_LIO_ROS2 (ROS2 Humble)
+
+common:
+  lid_topic: "/livox/lidar"
+  imu_topic: "/livox/imu"
+  time_sync: false
+  time_offset_lidar_to_imu: 0.0
+
+preprocess:
+  lidar_type: 1              # 1 = Livox non-repetitive scan (MID360)
+  scan_line: 4
+  timestamp_unit: 1          # nanosecond (livox_ros_driver2 default)
+  blind: 0.4                 # min range [m] — 0.3 for tight warehouse aisles
+  point_filter_num: 1        # 1 = no subsample, 2 = every other point
+  feature_extract_en: true
+
+mapping:
+  # IMU noise model (MID360 internal IMU: 200Hz)
+  acc_cov: 0.5               # accelerometer measurement noise covariance
+  gyr_cov: 0.1               # gyroscope measurement noise covariance
+  b_acc_cov: 0.0001          # accelerometer bias random walk
+  b_gyr_cov: 0.0001          # gyroscope bias random walk
+
+  # LiDAR model
+  fov_degree: 360            # MID360 full 360° FOV
+  det_range: 80.0            # max detection range [m]
+  extrinsic_est_en: false    # false when extrinsics are well-calibrated
+  extrinsic_T: [0.0, 0.0, 0.0]   # LiDAR -> IMU translation [m]
+  extrinsic_R: [1, 0, 0,          # LiDAR -> IMU rotation (identity if using
+                 0, 1, 0,          #   Livox internal IMU)
+                 0, 0, 1]
+
+  # Map parameters
+  voxel_size: 0.5            # initial map voxel size [m]
+  max_iteration: 3           # ESKF iteration count
+  filter_size_surf: 0.2      # surface point downsampling [m]
+  filter_size_map: 0.2       # map point downsampling [m]
+  cube_side_length: 1000     # ikd-tree cube side length [m]
+
+  # Runtime logging
+  runtime_pos_log_enable: false
+
+# IMU configuration
+imu:
+  imu_freq: 200              # MID360 IMU frequency
+  acc_norm: 9.81             # gravity normalization
+  gyr_norm: 1.0
+
+# Publish settings
+publish:
+  path_en: true              # publish trajectory path
+  path_pub_rate: 20.0        # path publish rate [Hz]
+  scan_publish_en: true      # publish registered scan for debugging
+  scan_body_frame: "lidar_frame"
+  dense_publish_en: false    # set to false to save bandwidth

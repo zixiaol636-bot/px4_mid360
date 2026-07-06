@@ -1,0 +1,52 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Frame Timeout: 15
+    - Class: rviz_default_plugins/Map
+      Name: Global Costmap
+      Topic: /global_costmap/costmap
+      Alpha: 0.7
+    - Class: rviz_default_plugins/Map
+      Name: Local Costmap
+      Topic: /local_costmap/costmap
+      Alpha: 0.5
+    - Class: rviz_default_plugins/Path
+      Name: Global Plan
+      Topic: /plan
+      Color: 0; 255; 0
+      Alpha: 0.8
+    - Class: rviz_default_plugins/Path
+      Name: Local Plan (DWB)
+      Topic: /local_plan
+      Color: 255; 255; 0
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Waypoints
+      Topic: /waypoint_markers
+    - Class: rviz_default_plugins/PointCloud2
+      Name: Obstacle Cloud
+      Topic: /cloud_registered
+      Style: Flat Squares
+      Size (m): 0.05
+      Color Transformer: ZAxisColor
+    - Class: rviz_default_plugins/Odometry
+      Name: Drone Pose
+      Topic: /odom_filtered
+      Keep: 1
+      Shape: Arrow
+      Length: 1.0
+  Global Options:
+    Fixed Frame: map
+    Frame Rate: 30
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Scale: 50
