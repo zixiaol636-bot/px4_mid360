@@ -1,61 +1,68 @@
-vision_pose_bridge:
+px4_visual_odometry_bridge:
   ros__parameters:
     odom_topic: /odom_filtered
-    vision_pose_topic: /mavros/vision_pose/pose
-    vision_pose_cov_topic: /mavros/vision_pose/pose_cov
-    frame_id: map
+    px4_namespace: ""
+    vehicle_visual_odometry_topic: /fmu/in/vehicle_visual_odometry
     publish_rate: 30.0
+    position_variance: 0.03
+    orientation_variance: 0.05
+    velocity_variance: 0.08
+    use_twist_velocity: false
 
-offboard_controller:
-  ros__parameters:
-    auto_start: false
-    setpoint_rate: 30.0
-    takeoff_height: 2.0
-    takeoff_speed: 0.5
-    landing_speed: 0.3
-    hover_duration: 0.0
-    offboard_mode: OFFBOARD
-    state_topic: /mavros/state
-    local_position_topic: /mavros/local_position/pose
-    setpoint_topic: /mavros/setpoint_velocity/cmd_vel
-    arming_service: /mavros/cmd/arming
-    set_mode_service: /mavros/set_mode
-
-cmdvel_to_setpoint:
+px4_cmdvel_bridge:
   ros__parameters:
     cmd_vel_topic: /cmd_vel_safe
-    setpoint_topic: /mavros/setpoint_velocity/cmd_vel
-    obstacle_z_topic: /obstacle/z_status
+    odom_topic: /odom_filtered
+    px4_namespace: ""
+    offboard_control_mode_topic: /fmu/in/offboard_control_mode
+    trajectory_setpoint_topic: /fmu/in/trajectory_setpoint
+    vehicle_command_topic: /fmu/in/vehicle_command
     publish_rate: 25.0
-    acceleration_limit: 1.0
+    cmd_vel_timeout: 0.5
     max_vel_horizontal: 1.5
     max_vel_vertical: 0.5
     max_yaw_rate: 1.0
-    cmd_vel_timeout: 0.5
+    auto_offboard: false
+    auto_arm: false
+    startup_setpoint_count: 10
 
-local_3d_avoidance:
+px4_status_bridge:
   ros__parameters:
-    cmd_vel_in_topic: /cmd_vel
-    cmd_vel_out_topic: /cmd_vel_safe
-    pointcloud_topic: /cloud_registered
+    px4_namespace: ""
+    vehicle_status_topic: /fmu/out/vehicle_status
+    vehicle_command_ack_topic: /fmu/out/vehicle_command_ack
+    status_text_topic: /px4_native/status
+    armed_topic: /px4_native/armed
+
+ego_planner_path_follower:
+  ros__parameters:
+    planned_path_topic: /planning/local_path
     odom_topic: /odom_filtered
-    publish_rate: 20.0
-    input_timeout: 0.5
-    cloud_timeout: 0.5
-    cloud_in_body_frame: false
-    max_points_to_process: 4000
-    forward_influence_distance: 4.0
-    rear_influence_distance: 1.0
-    side_influence_distance: 2.5
-    vertical_influence_distance: 2.0
-    safety_distance_xy: 1.2
-    safety_distance_z: 0.8
-    hard_stop_distance: 0.6
-    repulsion_gain_xy: 1.4
-    repulsion_gain_z: 1.1
-    lateral_escape_gain: 0.8
-    vertical_escape_gain: 0.6
-    smoothing_alpha: 0.35
-    max_output_xy: 1.5
-    max_output_z: 0.6
-    max_output_yaw_rate: 1.0
+    cmd_vel_out_topic: /cmd_vel_planned
+    path_timeout: 0.5
+    lookahead_distance: 1.0
+    position_gain: 0.8
+    yaw_gain: 1.0
+    max_xy_speed: 1.2
+    max_z_speed: 0.5
+    max_yaw_rate: 0.8
+    publish_rate: 30.0
+
+local_3d_safety_filter:
+  ros__parameters:
+    cmd_vel_in_topic: /cmd_vel_planned
+    cmd_vel_out_topic: /cmd_vel_safe
+    pointcloud_topic: /cloud_local_obstacles
+    pointcloud_frame_mode: world
+    odom_topic: /odom_filtered
+    stop_status_topic: /safety/obstacle_stop
+    cmd_timeout: 0.5
+    cloud_timeout: 0.8
+    danger_distance: 0.8
+    caution_distance: 2.5
+    corridor_radius_xy: 0.7
+    corridor_radius_z: 0.6
+    max_xy_speed: 1.2
+    max_z_speed: 0.5
+    publish_rate: 30.0
+    stop_on_stale_cloud: true

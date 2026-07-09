@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
+#include <filesystem>
 #include <limits>
 #include <string>
 #include <vector>
@@ -45,6 +46,7 @@ private:
     const double resolution = this->get_parameter("resolution").as_double();
     const double z_min = this->get_parameter("z_min").as_double();
     const double z_max = this->get_parameter("z_max").as_double();
+    std::filesystem::create_directories(output_dir);
 
     pcl::PointCloud<PointType> cloud;
     if (pcl::io::loadPCDFile(input_pcd, cloud) != 0) {

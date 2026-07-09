@@ -27,6 +27,16 @@ def generate_launch_description():
         default_value="./maps",
         description="Fallback save directory when map_path is not set",
     )
+    fast_lio_package_arg = DeclareLaunchArgument(
+        "fast_lio_package",
+        default_value="fast_lio2",
+        description="FAST-LIO ROS 2 package name",
+    )
+    fast_lio_executable_arg = DeclareLaunchArgument(
+        "fast_lio_executable",
+        default_value="fastlio_mapping",
+        description="FAST-LIO mapping executable name",
+    )
 
     mid360_driver = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
@@ -38,19 +48,9 @@ def generate_launch_description():
         ])
     )
 
-    mavros2 = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                get_package_share_directory("mavros2"),
-                "launch",
-                "px4.launch.py",
-            ])
-        ])
-    )
-
     fast_lio2 = Node(
-        package="fast_lio2",
-        executable="fastlio_mapping",
+        package=LaunchConfiguration("fast_lio_package"),
+        executable=LaunchConfiguration("fast_lio_executable"),
         name="fast_lio2",
         parameters=[fast_lio_params],
         output="screen",
@@ -73,6 +73,7 @@ def generate_launch_description():
         parameters=[{
             "map_file": LaunchConfiguration("map_path"),
             "save_directory": LaunchConfiguration("save_directory"),
+            "cloud_frame_mode": "world",
         }],
         output="screen",
     )
@@ -80,7 +81,9 @@ def generate_launch_description():
     return LaunchDescription([
         map_path_arg,
         save_directory_arg,
-        TimerAction(period=0.0, actions=[mid360_driver, mavros2]),
+        fast_lio_package_arg,
+        fast_lio_executable_arg,
+        TimerAction(period=0.0, actions=[mid360_driver]),
         TimerAction(period=2.0, actions=[fast_lio2, fast_lio_bridge]),
         TimerAction(period=5.0, actions=[map_saver]),
     ])

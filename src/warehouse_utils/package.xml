@@ -1,33 +1,24 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format="3"><!-- format="3" 是 ROS2 标准格式 -->
-
-  <!-- ===== 基本信息 ===== -->
-  <name>warehouse_utils</name>            <!-- 包名，CMakeLists.txt 的 project() 必须一致 -->
+<package format="3">
+  <name>warehouse_utils</name>
   <version>0.1.0</version>
-  <description>共享工具库：坐标系转换、YAML 加载器、TF 辅助函数</description>
+  <description>Shared utilities for waypoint YAML I/O and ROS/PX4 frame conversions.</description>
   <maintainer email="user@example.com">user</maintainer>
   <license>MIT</license>
 
-  <!-- ===== 编译工具 ===== -->
-  <buildtool_depend>ament_cmake</buildtool_depend>   <!-- ROS2 使用 ament 构建系统 -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!-- ===== 运行时依赖（编译+运行都需要）===== -->
-  <depend>rclcpp</depend>               <!-- ROS2 C++ 客户端库 -->
-  <depend>tf2</depend>                  <!-- TF2 坐标变换核心 -->
-  <depend>tf2_ros</depend>              <!-- TF2 的 ROS2 封装 -->
-  <depend>tf2_geometry_msgs</depend>    <!-- tf2 与 geometry_msgs 消息互转 -->
-  <depend>geometry_msgs</depend>        <!-- Pose / Twist / Point 等消息类型 -->
-  <depend>nav_msgs</depend>             <!-- Odometry 消息类型 -->
-  <depend>yaml-cpp</depend>             <!-- YAML 文件读写库 -->
+  <depend>geometry_msgs</depend>
+  <depend>rclcpp</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>yaml-cpp</depend>
 
-  <!-- ===== 测试依赖 ===== -->
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
-  <!-- ===== 构建类型 ===== -->
   <export>
-    <build_type>ament_cmake</build_type>   <!-- 使用 CMake 构建 -->
+    <build_type>ament_cmake</build_type>
   </export>
-
 </package>

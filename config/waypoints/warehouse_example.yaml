@@ -1,33 +1,32 @@
-# Example waypoint set for warehouse inventory flight
-# All positions in map frame (origin = mapping takeoff point)
-# Units: meters, radians, seconds
+# Example waypoint set for warehouse inventory flight.
+# Positions are in the map frame. Units: meters and seconds.
 ---
 - frame_id: "map"
-  position: [2.0, 1.0, 2.5]        # x, y, z [m] — aisle A entrance
-  orientation: [0.0, 0.0, 0.0, 1.0] # qx, qy, qz, qw — facing down aisle
-  hover_time: 5.0                    # hover 5s for barcode scan
-  acceptance_radius: 0.5             # within 0.5m = arrived
-
-- frame_id: "map"
-  position: [2.0, 10.0, 2.5]       # aisle A end, turn
-  orientation: [0.0, 0.0, 0.707, 0.707]  # yaw 90° (facing aisle B)
-  hover_time: 3.0
-  acceptance_radius: 0.5
-
-- frame_id: "map"
-  position: [5.0, 10.0, 2.5]       # aisle B start
-  orientation: [0.0, 0.0, 0.0, 1.0]  # yaw 0° (facing down aisle B)
+  position: [2.0, 1.0, 2.5]
+  orientation: [0.0, 0.0, 0.0, 1.0]
   hover_time: 5.0
   acceptance_radius: 0.5
 
 - frame_id: "map"
-  position: [5.0, 1.0, 2.5]        # aisle B end
+  position: [2.0, 10.0, 2.5]
   orientation: [0.0, 0.0, 0.707, 0.707]
   hover_time: 3.0
   acceptance_radius: 0.5
 
 - frame_id: "map"
-  position: [0.0, 0.0, 2.0]        # return to origin (landing zone)
+  position: [5.0, 10.0, 2.5]
   orientation: [0.0, 0.0, 0.0, 1.0]
-  hover_time: 0.0                    # don't hover, proceed to land
+  hover_time: 5.0
+  acceptance_radius: 0.5
+
+- frame_id: "map"
+  position: [5.0, 1.0, 2.5]
+  orientation: [0.0, 0.0, 0.707, 0.707]
+  hover_time: 3.0
+  acceptance_radius: 0.5
+
+- frame_id: "map"
+  position: [0.0, 0.0, 2.0]
+  orientation: [0.0, 0.0, 0.0, 1.0]
+  hover_time: 0.0
   acceptance_radius: 0.5

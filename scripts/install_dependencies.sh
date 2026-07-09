@@ -1,57 +1,72 @@
 #!/bin/bash
-# ============================================================
-# PX4 + MID360 仓库无人机 — 依赖安装脚本
-# 目标系统: Ubuntu 22.04 + ROS2 Humble
-# ============================================================
-set -e
+# Install system packages and source dependencies for the PX4 + MID360 workspace.
 
-WORKSPACE="${HOME}/ros2_ws"
-echo "=== 安装 PX4 + MID360 仓库无人机依赖 ==="
+set -euo pipefail
 
-# --- 1. 系统依赖包 ---
-echo "[1/6] 安装系统依赖..."
+WORKSPACE="${WORKSPACE:-${HOME}/ros2_ws}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+echo "=== Installing PX4 + MID360 dependencies ==="
+echo "Workspace: ${WORKSPACE}"
+
+echo "[1/6] Installing system packages..."
 sudo apt-get update
 sudo apt-get install -y \
-    python3-vcstool python3-rosdep2 python3-colcon-common-extensions \
-    libpcl-dev libyaml-cpp-dev libeigen3-dev \
-    ros-humble-pcl-conversions ros-humble-pcl-ros \
-    ros-humble-tf2-eigen ros-humble-tf2-geometry-msgs
+    git \
+    python3-colcon-common-extensions \
+    python3-rosdep2 \
+    python3-vcstool \
+    libeigen3-dev \
+    libnlopt-dev \
+    libopencv-dev \
+    libpcl-dev \
+    libyaml-cpp-dev \
+    ros-humble-pcl-conversions \
+    ros-humble-pcl-ros \
+    ros-humble-cv-bridge \
+    ros-humble-message-filters \
+    ros-humble-rmw-cyclonedds-cpp \
+    ros-humble-tf2-eigen \
+    ros-humble-tf2-geometry-msgs
 
-# --- 2. Livox SDK2 ---
-echo "[2/6] 编译 Livox SDK2..."
-mkdir -p ${WORKSPACE}
-cd ${WORKSPACE}
+echo "[2/6] Building and installing Livox SDK2..."
+mkdir -p "${WORKSPACE}"
+cd "${WORKSPACE}"
 if [ ! -d "Livox-SDK2" ]; then
     git clone https://github.com/Livox-SDK/Livox-SDK2.git
 fi
-cd Livox-SDK2 && mkdir -p build && cd build
-cmake .. && make -j$(nproc) && sudo make install
+cmake -S Livox-SDK2 -B Livox-SDK2/build
+cmake --build Livox-SDK2/build -j"$(nproc)"
+sudo cmake --install Livox-SDK2/build
 
-# --- 3. 拉取所有 ROS2 包 ---
-echo "[3/6] 通过 vcstool 拉取 ROS2 包..."
-mkdir -p ${WORKSPACE}/src
-cd ${WORKSPACE}/src
-# 从项目目录复制 dependencies.repos 到工作空间
-cp "$(dirname "$0")/../dependencies.repos" .
-vcs import < dependencies.repos
+echo "[3/6] Importing ROS 2 source dependencies..."
+mkdir -p "${WORKSPACE}/src"
+cd "${WORKSPACE}/src"
+if [ ! -f "${REPO_ROOT}/dependencies.repos" ]; then
+    echo "Cannot find dependencies.repos at ${REPO_ROOT}/dependencies.repos" >&2
+    exit 1
+fi
+vcs import < "${REPO_ROOT}/dependencies.repos"
 
-# --- 4. 安装 ROS2 包依赖 ---
-echo "[4/6] 安装 ROS2 包依赖..."
-cd ${WORKSPACE}
-rosdep init || true  # ignore if already initialized
+echo "[3.1/6] Patching EGO-Planner ROS2 goal altitude handling..."
+WORKSPACE="${WORKSPACE}" bash "${REPO_ROOT}/scripts/patch_ego_planner_ros2.sh"
+
+echo "[4/6] Installing ROS package dependencies..."
+cd "${WORKSPACE}"
+sudo rosdep init 2>/dev/null || true
 rosdep update
-rosdep install --from-paths src --ignore-src -r -y
+rosdep install --from-paths src --ignore-src -r -y \
+    --skip-keys "Eigen3 PCL OpenCV"
 
-# --- 5. 编译 livox_ros_driver2 (必须用官方脚本) ---
-echo "[5/6] 编译 livox_ros_driver2..."
-cd ${WORKSPACE}/src/livox_ros_driver2
+echo "[5/6] Building livox_ros_driver2 with its official script..."
+cd "${WORKSPACE}/src/livox_ros_driver2"
 ./build.sh humble
 
-# --- 6. 编译所有自定义包 ---
-echo "[6/6] 用 colcon 编译所有包..."
-cd ${WORKSPACE}
+echo "[6/6] Building workspace..."
+cd "${WORKSPACE}"
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 echo ""
-echo "=== 安装完成! ==="
-echo "加载工作空间: source ${WORKSPACE}/install/setup.bash"
+echo "=== Installation complete ==="
+echo "Run: source ${WORKSPACE}/install/setup.bash"

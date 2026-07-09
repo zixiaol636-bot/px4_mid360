@@ -1,91 +1,124 @@
 # 飞行前检查清单
 
-## 1. 环境
+这份清单适用于当前项目默认架构：PX4 XRCE-DDS + MID360 + FAST-LIO + 人工航点盘库 + 3D 局部避障。
 
-- [ ] 作业区域已清空人员和杂物
-- [ ] 起降区平整，LiDAR 视野无遮挡
-- [ ] 已确认室内 GPS 不可用，任务依赖 LiDAR + 视觉/里程计链路
-- [ ] 返航点附近没有吊物、横梁、低垂管线
+注意：地理围栏默认只发布安全状态，不直接抢控制链。如果要做强制接管，建议先增加目标/速度仲裁器，避免任务层和安全层同时发控制输出。
 
-## 2. 硬件
+## 1. 硬件
 
-- [ ] MID360 通电正常
-- [ ] 飞控通电正常
-- [ ] 机载电脑供电稳定
-- [ ] 以太网、USB、串口线缆固定可靠
-- [ ] 电池电量充足
-- [ ] 螺旋桨和机架紧固
+- PX4 飞控供电正常。
+- MID360 供电和网线正常。
+- 机载电脑与 PX4 串口或以太网连接正常。
+- 螺旋桨方向、桨叶、机臂、货架环境安全检查完成。
+- 飞手遥控器可随时接管。
 
-## 3. 软件
+## 2. PX4 XRCE-DDS
 
-- [ ] `source ~/ros2_ws/install/setup.bash`
-- [ ] `ros2 topic list` 能看到核心话题
-- [ ] `/livox/lidar` 正常发布
-- [ ] `/livox/imu` 正常发布
-- [ ] `/mavros/state` 正常发布
-- [ ] `/odom_filtered` 正常发布
-- [ ] `/map_cloud` 或地图加载流程正常
-
-## 4. 参数与地图
-
-- [ ] `config/fast_lio/mid360_localization.yaml` 已确认
-- [ ] 当前使用的 `.pcd` 地图正确
-- [ ] 当前使用的 `map.yaml` 与 `.pcd` 地图匹配
-- [ ] 航点文件已确认是本次任务版本
-- [ ] `offboard_params.yaml` 已确认速度和加速度限制
-
-## 5. 启动顺序
-
-- [ ] 先启动定位或全系统
-- [ ] 再确认 `/mavros/vision_pose/pose` 正常
-- [ ] 再确认 `/cmd_vel -> /cmd_vel_safe -> /mavros/setpoint_velocity/cmd_vel` 链路正常
-- [ ] 再进入 OFFBOARD / 自动任务
-
-## 6. 起飞前 ROS 自检
-
-推荐至少执行这些检查：
+先启动 XRCE-DDS Agent，然后检查：
 
 ```bash
-ros2 topic echo /mavros/state --once
+ros2 topic list | grep /fmu
+ros2 topic echo /fmu/out/vehicle_status --once
+```
+
+预期现象：
+
+- 能看到 `/fmu/in/*` 和 `/fmu/out/*` 话题。
+- `/fmu/out/vehicle_status` 能输出 `arming_state`、`nav_state` 等字段。
+
+如果只有 topic 但没有数据，优先检查 QoS、Agent、PX4 `uxrce_dds_client` 和 ROS domain。
+
+## 3. MID360
+
+```bash
+ros2 topic hz /livox/lidar
+ros2 topic hz /livox/imu
+```
+
+预期现象：
+
+- 点云和 IMU 都有稳定频率。
+- 点云方向和机体安装方向已经确认。
+
+## 4. FAST-LIO 定位
+
+```bash
 ros2 topic echo /odom_filtered --once
-ros2 topic echo /mavros/vision_pose/pose --once
+ros2 topic hz /cloud_registered
 ```
 
-如果跑全系统：
+预期现象：
+
+- `/odom_filtered` 持续输出位姿。
+- `/cloud_registered` 持续输出注册后的点云。
+- 缓慢移动飞机时，位姿方向与实际移动方向一致。
+
+## 5. PX4 视觉里程计桥
 
 ```bash
-ros2 launch px4_mid360 bringup_all.launch.py \
-  map_path:=./maps/warehouse_map.pcd \
-  map_grid_path:=./maps/map.yaml
+ros2 topic echo /fmu/in/vehicle_visual_odometry --once
 ```
 
-如果执行任务：
+预期现象：
+
+- 能看到由 `/odom_filtered` 转换来的 PX4 视觉里程计消息。
+- 实机前必须低速验证 ENU/FLU 到 NED/FRD 的方向转换。
+
+## 6. PX4 状态桥
 
 ```bash
-ros2 launch px4_mid360 offboard_mission.launch.py \
-  waypoint_file:=./config/waypoints/warehouse_example.yaml
+ros2 topic echo /px4_native/status --once
+ros2 topic echo /px4_native/armed --once
 ```
 
-## 7. 飞控状态
+预期现象：
 
-- [ ] MAVROS 已连接飞控
-- [ ] 飞控姿态估计稳定
-- [ ] 本地位置估计稳定
-- [ ] 无明显 EKF 报警
-- [ ] 电池状态正常
+- `/px4_native/status` 有 `arming_state`、`nav_state`、`failsafe`。
+- `/px4_native/armed` 能反映 PX4 解锁状态。
 
-## 8. 风险动作前再确认
+## 7. Offboard 心跳
 
-- [ ] 手上有随时切回手动或急停的方案
-- [ ] 任务初次验证时，先低高度、低速度
-- [ ] 第一次上机时不要同时验证太多变量
+启动主系统后检查：
 
-## 9. 首飞建议
+```bash
+ros2 topic hz /fmu/in/offboard_control_mode
+ros2 topic hz /fmu/in/trajectory_setpoint
+```
 
-第一次真实测试建议顺序：
+预期现象：
 
-1. 只起系统，不起飞。
-2. 只验证定位和地图对齐。
-3. 手动起飞，验证视觉位姿与 LiDAR 链路。
-4. 短距离小范围自动速度控制。
-5. 最后再跑完整航点任务。
+- 两个话题稳定发布。
+- 频率接近参数中设置的 Offboard 发布频率。
+
+## 8. 3D 局部避障
+
+```bash
+ros2 topic echo /cmd_vel_safe --once
+```
+
+实验方法：
+
+- 先发一个很小的 `/cmd_vel_planned` 前进速度。
+- 在 MID360 前方安全距离内放入障碍物。
+- 观察 `/drone_0_planning/pos_cmd`、`/cmd_vel_planned` 和 `/cmd_vel_safe`：EGO-Planner ROS2 负责绕障轨迹，安全过滤器只负责危险时减速或刹停。
+
+## 9. 任务层
+
+```bash
+ros2 service call /mission/start std_srvs/srv/Trigger "{}"
+ros2 topic echo /planning/goal_pose --once
+```
+
+预期现象：
+
+- 任务开始后 `/planning/goal_pose` 有输出。
+- 飞机接近航点后会切到下一个航点。
+- 最后一个仓库完成后进入 RTL 返回起飞点。
+
+## 10. 实机底线
+
+- 第一次只做架空或拆桨测试。
+- 第二次只做低速、低高度、短距离测试。
+- 第三次再做单仓测试。
+- 六仓连续盘库必须在单仓和双仓成功后再做。
+- 任意方向控制反了，立即停止，不要靠参数硬飞。

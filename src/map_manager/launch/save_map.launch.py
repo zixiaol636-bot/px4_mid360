@@ -7,18 +7,6 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    map_frame_arg = DeclareLaunchArgument(
-        "map_frame",
-        default_value="map",
-        description="Global frame used for map accumulation",
-    )
-
-    odom_frame_arg = DeclareLaunchArgument(
-        "odom_frame",
-        default_value="odom",
-        description="Odometry frame id",
-    )
-
     save_directory_arg = DeclareLaunchArgument(
         "save_directory",
         default_value="/tmp",
@@ -31,10 +19,22 @@ def generate_launch_description():
         description="Optional fixed PCD output file path",
     )
 
-    voxel_leaf_size_arg = DeclareLaunchArgument(
-        "voxel_leaf_size",
-        default_value="0.1",
-        description="Voxel size used while building the map",
+    cloud_topic_arg = DeclareLaunchArgument(
+        "cloud_topic",
+        default_value="/cloud_registered",
+        description="Registered point cloud topic to accumulate",
+    )
+
+    odom_topic_arg = DeclareLaunchArgument(
+        "odom_topic",
+        default_value="/Odometry",
+        description="Odometry topic used to transform incoming point clouds",
+    )
+
+    cloud_frame_mode_arg = DeclareLaunchArgument(
+        "cloud_frame_mode",
+        default_value="world",
+        description="Use 'world' for FAST-LIO registered clouds, or 'body' for body-frame clouds",
     )
 
     map_saver_node = Node(
@@ -43,19 +43,19 @@ def generate_launch_description():
         name="map_saver",
         output="screen",
         parameters=[{
-            "map_frame": LaunchConfiguration("map_frame"),
-            "odom_frame": LaunchConfiguration("odom_frame"),
             "save_directory": LaunchConfiguration("save_directory"),
             "map_file": LaunchConfiguration("map_file"),
-            "voxel_leaf_size": LaunchConfiguration("voxel_leaf_size"),
+            "cloud_topic": LaunchConfiguration("cloud_topic"),
+            "odom_topic": LaunchConfiguration("odom_topic"),
+            "cloud_frame_mode": LaunchConfiguration("cloud_frame_mode"),
         }],
     )
 
     return LaunchDescription([
-        map_frame_arg,
-        odom_frame_arg,
         save_directory_arg,
         map_file_arg,
-        voxel_leaf_size_arg,
+        cloud_topic_arg,
+        odom_topic_arg,
+        cloud_frame_mode_arg,
         map_saver_node,
     ])

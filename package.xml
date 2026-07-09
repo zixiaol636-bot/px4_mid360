@@ -11,13 +11,11 @@
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
-  <exec_depend>fast_lio2</exec_depend>
   <exec_depend>fast_lio_bridge</exec_depend>
   <exec_depend>map_manager</exec_depend>
-  <exec_depend>mavros2</exec_depend>
   <exec_depend>mid360_driver_wrapper</exec_depend>
-  <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>px4_offboard_bridge</exec_depend>
+  <exec_depend>px4_msgs</exec_depend>
   <exec_depend>relocalizer</exec_depend>
   <exec_depend>safety_monitor</exec_depend>
   <exec_depend>waypoint_planner</exec_depend>

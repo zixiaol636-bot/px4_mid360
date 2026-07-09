@@ -1,7 +1,4 @@
-# SaveWaypoints.srv
-# 请求：要持久化到 YAML 的航点数组
 waypoint_planner/WaypointArray waypoints
 ---
-# 响应
 bool success
 string message

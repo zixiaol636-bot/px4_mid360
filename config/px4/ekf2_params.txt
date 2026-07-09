@@ -1,34 +1,38 @@
-# PX4 EKF2 参数 — 室内视觉飞行
-# 加载方式: QGroundControl → Parameters → Tools → Load from file
+# PX4 EKF2 indoor external-odometry parameter template
 #
-# 关键: 室内必须禁用磁力计，启用外部视觉融合
+# Load path: QGroundControl -> Parameters -> Tools -> Load from file.
+# PX4 parameter names change between firmware releases. Before loading this file,
+# verify each parameter against the exact PX4 firmware running on your flight
+# controller.
+#
+# This project sends FAST-LIO odometry through XRCE-DDS:
+#   /fmu/in/vehicle_visual_odometry
 
-# === 外部视觉融合 (EKF2 EV) ===
-EKF2_AID_MASK = 280          # 启用视觉位置+偏航+速度融合
-EKF2_HGT_MODE = 3            # 视觉高度源
-EKF2_EV_DELAY = 0            # 零延迟 (MAVROS 处理时间同步)
-EKF2_EV_POS_X = 0.10         # 视觉位置噪声 X [m]
-EKF2_EV_POS_Y = 0.10         # 视觉位置噪声 Y [m]
-EKF2_EV_POS_Z = 0.10         # 视觉位置噪声 Z [m]
-EKF2_EV_YAW = 0.10           # 视觉偏航噪声 [rad]
-EKF2_EVP_NOISE = 0.20        # 视觉位置观测噪声 [m]
-EKF2_EVV_NOISE = 0.20        # 视觉速度观测噪声 [m/s]
-EKF2_EVP_GATE = 10.0         # 位置创新门限 (若 EKF 拒绝视觉则增大)
+# External vision / external odometry fusion.
+EKF2_AID_MASK = 280          # Legacy PX4: fuse EV position, EV yaw, and EV velocity.
+EKF2_HGT_MODE = 3            # Legacy PX4: use vision as height source.
+EKF2_EV_DELAY = 0            # Tune for XRCE-DDS and onboard-computer timing.
+EKF2_EV_POS_X = 0.10         # EV position observation noise X/Y/Z [m].
+EKF2_EV_POS_Y = 0.10
+EKF2_EV_POS_Z = 0.10
+EKF2_EV_YAW = 0.10           # EV yaw observation noise [rad].
+EKF2_EVP_NOISE = 0.20        # EV position noise [m].
+EKF2_EVV_NOISE = 0.20        # EV velocity noise [m/s].
+EKF2_EVP_GATE = 10.0         # EV position innovation gate.
 
-# === 室内专用 ===
-EKF2_MAG_TYPE = 5            # 无 — 禁用磁力计 (室内磁干扰)
-EKF2_NOAID_NOISE = 0.5       # 无辅助数据时的位置噪声 [m]
-EKF2_GBIAS_INIT = 0.0        # 禁止启动时陀螺零偏捕获
-EKF2_ABIAS_INIT = 0.0        # 禁止启动时加速度零偏捕获
+# Indoor operation.
+EKF2_MAG_TYPE = 5            # Disable magnetometer fusion in disturbed indoor areas.
+EKF2_NOAID_NOISE = 0.5       # Position process noise without aiding [m].
+EKF2_GBIAS_INIT = 0.0
+EKF2_ABIAS_INIT = 0.0
 
-# === Offboard / Commander ===
-COM_OBL_ACT = 2              # Offboard 丢失 → 降落
-COM_OF_LOSS_T = 0.5          # Offboard 丢失超时 [s]
-COM_RCL_EXCEPT = 4           # 允许 Offboard 模式中遥控器超控
-COM_ARM_WO_GPS = 1           # 允许无 GPS 解锁
-NAV_RCL_ACT = 0              # 遥控器丢失动作: 无 (自动模式)
-NAV_DLL_ACT = 0              # 数据链丢失动作: 无
+# Offboard / commander.
+COM_OBL_ACT = 2              # Offboard loss action: land.
+COM_OF_LOSS_T = 0.5          # Offboard loss timeout [s].
+COM_RCL_EXCEPT = 4           # Allow RC loss exception in Offboard if configured.
+COM_ARM_WO_GPS = 1           # Allow arming without GPS.
+NAV_RCL_ACT = 0              # RC loss action disabled for indoor test workflow.
+NAV_DLL_ACT = 0              # Data-link loss action disabled for indoor test workflow.
 
-# === 安全 ===
-CBRK_IO_SAFETY = 22027       # 禁用 IO 安全开关 (如需)
-MAV_ODOM_LP = 1              # 启用 MAVLink ODOMETRY 转发 (调试用)
+# Safety switch. Only enable if your airframe and test procedure require it.
+CBRK_IO_SAFETY = 22027

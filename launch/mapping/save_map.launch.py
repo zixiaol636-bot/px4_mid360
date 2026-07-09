@@ -4,6 +4,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, LogInfo, TimerAction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -57,7 +58,7 @@ def generate_launch_description():
         parameters=[{
             "input_pcd": LaunchConfiguration("map_path"),
             "output_dir": LaunchConfiguration("output_dir"),
-            "resolution": LaunchConfiguration("resolution"),
+            "resolution": ParameterValue(LaunchConfiguration("resolution"), value_type=float),
             "z_min": -0.5,
             "z_max": 3.5,
             "auto_run": True,

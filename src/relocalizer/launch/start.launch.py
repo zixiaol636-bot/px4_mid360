@@ -4,6 +4,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -55,13 +56,18 @@ def generate_launch_description():
         name="icp_relocalizer",
         output="screen",
         parameters=[{
-            "icp_max_corr_dist": LaunchConfiguration("icp_max_corr_dist"),
-            "icp_max_iter": LaunchConfiguration("icp_max_iter"),
-            "icp_fitness_thresh": LaunchConfiguration("icp_fitness_thresh"),
+            "icp_max_corr_dist": ParameterValue(
+                LaunchConfiguration("icp_max_corr_dist"), value_type=float),
+            "icp_max_iter": ParameterValue(
+                LaunchConfiguration("icp_max_iter"), value_type=int),
+            "icp_fitness_thresh": ParameterValue(
+                LaunchConfiguration("icp_fitness_thresh"), value_type=float),
             "map_frame": LaunchConfiguration("map_frame"),
             "odom_frame": LaunchConfiguration("odom_frame"),
-            "voxel_leaf_size": LaunchConfiguration("voxel_leaf_size"),
-            "correction_rate": LaunchConfiguration("correction_rate"),
+            "voxel_leaf_size": ParameterValue(
+                LaunchConfiguration("voxel_leaf_size"), value_type=float),
+            "correction_rate": ParameterValue(
+                LaunchConfiguration("correction_rate"), value_type=float),
         }],
     )
 

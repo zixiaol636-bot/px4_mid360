@@ -17,77 +17,74 @@ def generate_launch_description():
     params_arg = DeclareLaunchArgument(
         "params_file",
         default_value=default_params,
-        description="Path to YAML parameter file",
+        description="Parameter YAML file for PX4 XRCE-DDS bridge nodes",
     )
-    enable_offboard_controller_arg = DeclareLaunchArgument(
-        "enable_offboard_controller",
+    enable_ego_follower_arg = DeclareLaunchArgument(
+        "enable_ego_planner_path_follower",
         default_value="false",
-        description="Whether to launch the demo offboard takeoff controller",
+        description="Optional fallback follower for planners that publish nav_msgs/Path on /planning/local_path",
     )
-    enable_z_axis_monitor_arg = DeclareLaunchArgument(
-        "enable_z_axis_monitor",
-        default_value="false",
-        description="Whether to launch the legacy Z-axis only obstacle monitor",
+    enable_safety_filter_arg = DeclareLaunchArgument(
+        "enable_local_3d_safety_filter",
+        default_value="true",
+        description="Insert final 3D safety filter before PX4 setpoints",
     )
-
     params_file = LaunchConfiguration("params_file")
-    enable_offboard_controller = LaunchConfiguration("enable_offboard_controller")
-    enable_z_axis_monitor = LaunchConfiguration("enable_z_axis_monitor")
 
-    vision_pose_bridge_node = Node(
+    ego_planner_path_follower_node = Node(
         package="px4_offboard_bridge",
-        executable="vision_pose_bridge",
-        name="vision_pose_bridge",
+        executable="ego_planner_path_follower",
+        name="ego_planner_path_follower",
+        output="screen",
+        parameters=[params_file],
+        respawn=True,
+        condition=IfCondition(LaunchConfiguration("enable_ego_planner_path_follower")),
+    )
+
+    local_3d_safety_filter_node = Node(
+        package="px4_offboard_bridge",
+        executable="local_3d_safety_filter",
+        name="local_3d_safety_filter",
+        output="screen",
+        parameters=[params_file],
+        respawn=True,
+        condition=IfCondition(LaunchConfiguration("enable_local_3d_safety_filter")),
+    )
+
+    px4_visual_odometry_bridge_node = Node(
+        package="px4_offboard_bridge",
+        executable="px4_visual_odometry_bridge",
+        name="px4_visual_odometry_bridge",
         output="screen",
         parameters=[params_file],
         respawn=True,
     )
 
-    offboard_controller_node = Node(
+    px4_cmdvel_bridge_node = Node(
         package="px4_offboard_bridge",
-        executable="offboard_controller",
-        name="offboard_controller",
-        output="screen",
-        parameters=[params_file],
-        respawn=False,
-        condition=IfCondition(enable_offboard_controller),
-    )
-
-    cmdvel_to_setpoint_node = Node(
-        package="px4_offboard_bridge",
-        executable="cmdvel_to_setpoint",
-        name="cmdvel_to_setpoint",
+        executable="px4_cmdvel_bridge",
+        name="px4_cmdvel_bridge",
         output="screen",
         parameters=[params_file],
         respawn=True,
     )
 
-    local_3d_avoidance_node = Node(
+    px4_status_bridge_node = Node(
         package="px4_offboard_bridge",
-        executable="local_3d_avoidance",
-        name="local_3d_avoidance",
+        executable="px4_status_bridge",
+        name="px4_status_bridge",
         output="screen",
         parameters=[params_file],
         respawn=True,
-    )
-
-    z_axis_monitor_node = Node(
-        package="px4_offboard_bridge",
-        executable="z_axis_monitor",
-        name="z_axis_monitor",
-        output="screen",
-        parameters=[params_file],
-        respawn=True,
-        condition=IfCondition(enable_z_axis_monitor),
     )
 
     return LaunchDescription([
         params_arg,
-        enable_offboard_controller_arg,
-        enable_z_axis_monitor_arg,
-        vision_pose_bridge_node,
-        offboard_controller_node,
-        local_3d_avoidance_node,
-        cmdvel_to_setpoint_node,
-        z_axis_monitor_node,
+        enable_ego_follower_arg,
+        enable_safety_filter_arg,
+        ego_planner_path_follower_node,
+        local_3d_safety_filter_node,
+        px4_visual_odometry_bridge_node,
+        px4_cmdvel_bridge_node,
+        px4_status_bridge_node,
     ])

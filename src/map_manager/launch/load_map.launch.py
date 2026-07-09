@@ -4,6 +4,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -33,7 +34,8 @@ def generate_launch_description():
         parameters=[{
             "map_file": LaunchConfiguration("map_file"),
             "map_frame": LaunchConfiguration("map_frame"),
-            "load_on_start": LaunchConfiguration("load_on_start"),
+            "load_on_start": ParameterValue(
+                LaunchConfiguration("load_on_start"), value_type=bool),
         }],
     )
 

@@ -1,10 +1,4 @@
 repositories:
-  # Livox SDK2 (must compile and install first)
-  Livox-SDK2:
-    type: git
-    url: https://github.com/Livox-SDK/Livox-SDK2.git
-    version: master
-
   # Livox ROS2 driver
   livox_ros_driver2:
     type: git
@@ -23,17 +17,24 @@ repositories:
   #   url: https://github.com/MIT-SPARK/spark-fast-lio.git
   #   version: main
 
-  # MAVROS2
-  mavros2:
+  # PX4 ROS 2 message definitions for native uXRCE-DDS / Zenoh transport
+  px4_msgs:
     type: git
-    url: https://github.com/mavlink/mavros.git
-    version: ros2
+    url: https://github.com/PX4/px4_msgs.git
+    version: main
 
-  # Nav2 (navigation2)
-  navigation2:
+  # PX4 ROS 2 examples and reference bridge code
+  px4_ros_com:
     type: git
-    url: https://github.com/ros-navigation/navigation2.git
-    version: humble
+    url: https://github.com/PX4/px4_ros_com.git
+    version: main
+
+  # EGO-Planner ROS2 branch for real 3D local trajectory planning.
+  # Official EGO-Planner README points ROS2 users to this branch.
+  ego_planner_swarm_ros2:
+    type: git
+    url: https://github.com/ZJU-FAST-Lab/ego-planner-swarm.git
+    version: ros2_version
 
   # LiDAR-IMU extrinsic calibration
   lidar_imu_init:

@@ -10,7 +10,7 @@ class EkfHealthMonitor : public rclcpp::Node
 public:
   EkfHealthMonitor() : Node("ekf_health_monitor")
   {
-    this->declare_parameter<std::string>("odom_topic", "/mavros/local_position/odom");
+    this->declare_parameter<std::string>("odom_topic", "/odom_filtered");
     this->declare_parameter<std::string>("status_topic", "/safety/ekf_health");
     this->declare_parameter<double>("max_position_covariance", 0.5);
     this->declare_parameter<double>("max_orientation_covariance", 0.1);
@@ -51,11 +51,12 @@ private:
     consecutive_failures_ = healthy ? 0 : consecutive_failures_ + 1;
     const bool filtered_healthy = consecutive_failures_ < threshold;
 
-    if (filtered_healthy != last_published_healthy_) {
+    if (!has_published_status_ || filtered_healthy != last_published_healthy_) {
       std_msgs::msg::Bool status;
       status.data = filtered_healthy;
       status_pub_->publish(status);
       last_published_healthy_ = filtered_healthy;
+      has_published_status_ = true;
     }
   }
 
@@ -63,6 +64,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr status_pub_;
   int consecutive_failures_{0};
   bool last_published_healthy_{true};
+  bool has_published_status_{false};
 };
 
 int main(int argc, char ** argv)

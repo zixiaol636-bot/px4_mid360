@@ -15,17 +15,25 @@ def generate_launch_description():
     fast_lio_params = os.path.join(
         project_dir, "config", "fast_lio", "mid360_localization.yaml"
     )
-    nav2_params = os.path.join(project_dir, "config", "nav2", "nav2_params.yaml")
     map_path_arg = DeclareLaunchArgument(
         "map_path",
         default_value="./maps/warehouse_map.pcd",
         description="Path to pre-built PCD map",
     )
-
-    map_grid_path_arg = DeclareLaunchArgument(
-        "map_grid_path",
-        default_value="./maps/map.yaml",
-        description="Path to Nav2 occupancy map YAML",
+    enable_ego_planner_arg = DeclareLaunchArgument(
+        "enable_ego_planner_ros2",
+        default_value="true",
+        description="Launch ego-planner-swarm ros2_version for real 3D local planning",
+    )
+    fast_lio_package_arg = DeclareLaunchArgument(
+        "fast_lio_package",
+        default_value="fast_lio2",
+        description="FAST-LIO ROS 2 package name",
+    )
+    fast_lio_executable_arg = DeclareLaunchArgument(
+        "fast_lio_executable",
+        default_value="fastlio_mapping",
+        description="FAST-LIO mapping/localization executable name",
     )
 
     mid360_driver = IncludeLaunchDescription(
@@ -38,19 +46,9 @@ def generate_launch_description():
         ])
     )
 
-    mavros2 = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                get_package_share_directory("mavros2"),
-                "launch",
-                "px4.launch.py",
-            ])
-        ])
-    )
-
     fast_lio2 = Node(
-        package="fast_lio2",
-        executable="fastlio_mapping",
+        package=LaunchConfiguration("fast_lio_package"),
+        executable=LaunchConfiguration("fast_lio_executable"),
         name="fast_lio2",
         parameters=[
             fast_lio_params,
@@ -85,20 +83,6 @@ def generate_launch_description():
         output="screen",
     )
 
-    nav2 = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                get_package_share_directory("nav2_bringup"),
-                "launch",
-                "navigation_launch.py",
-            ])
-        ]),
-        launch_arguments={
-            "params_file": nav2_params,
-            "map": LaunchConfiguration("map_grid_path"),
-        }.items(),
-    )
-
     offboard_bridge = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
@@ -106,7 +90,24 @@ def generate_launch_description():
                 "launch",
                 "offboard_bridge.launch.py",
             ])
-        ])
+        ]),
+        launch_arguments={
+            "enable_ego_planner_path_follower": "false",
+        }.items(),
+    )
+
+    ego_planner_ros2 = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                project_dir,
+                "launch",
+                "auto_flight",
+                "ego_planner_ros2.launch.py",
+            ])
+        ]),
+        launch_arguments={
+            "enable_ego_planner_ros2": LaunchConfiguration("enable_ego_planner_ros2"),
+        }.items(),
     )
 
     safety_monitors = IncludeLaunchDescription(
@@ -121,13 +122,15 @@ def generate_launch_description():
 
     return LaunchDescription([
         map_path_arg,
-        map_grid_path_arg,
-        TimerAction(period=0.0, actions=[mid360_driver, mavros2]),
+        enable_ego_planner_arg,
+        fast_lio_package_arg,
+        fast_lio_executable_arg,
+        TimerAction(period=0.0, actions=[mid360_driver]),
         TimerAction(period=2.0, actions=[fast_lio2, fast_lio_bridge]),
         TimerAction(period=5.0, actions=[map_loader, relocalizer]),
-        TimerAction(period=8.0, actions=[nav2]),
+        TimerAction(period=6.0, actions=[ego_planner_ros2]),
         TimerAction(
-            period=10.0,
+            period=7.0,
             actions=[offboard_bridge, safety_monitors],
         ),
     ])

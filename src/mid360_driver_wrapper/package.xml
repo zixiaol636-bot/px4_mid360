@@ -3,7 +3,7 @@
 <package format="3">
   <name>mid360_driver_wrapper</name>
   <version>0.1.0</version>
-  <description>MID360 LiDAR 的 livox_ros_driver2 生命周期管理包装器</description>
+  <description>Livox MID360 driver launch wrapper and point cloud watchdog.</description>
   <maintainer email="user@example.com">user</maintainer>
   <license>MIT</license>
 
@@ -12,6 +12,7 @@
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

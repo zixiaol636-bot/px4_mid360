@@ -1,102 +1,51 @@
-# CLAUDE.md — PX4 + MID360 Indoor Warehouse Drone
+# Project Notes
 
-This file provides guidance to Claude Code when working in this repository.
+This repository is a ROS 2 Humble workspace for indoor warehouse inventory flight using PX4, Livox MID360, FAST-LIO2, EGO-Planner integration, and native PX4 XRCE-DDS.
 
-## Architecture Overview
+## Architecture
 
-This is a **ROS2 Humble** (Ubuntu 22.04) project for autonomous indoor warehouse inventory flight using:
-- **PX4** flight controller (Pixhawk) — attitude/position control + EKF2 sensor fusion
-- **Livox MID360** — 360° FOV LiDAR (10Hz point cloud + 200Hz IMU)
-- **Onboard computer** (Jetson Orin NX / x86 NUC) — all ROS2 computation
+- PX4 communication: XRCE-DDS with `px4_msgs`.
+- Sensor front end: Livox MID360.
+- Localization and mapping: FAST-LIO2.
+- Mission layer: generated or manually edited waypoint YAML.
+- Local safety layer: 3D point-cloud obstacle avoidance.
+- Flight execution: PX4 Offboard setpoints through `/fmu/in/*`.
 
-## Key Technical Decisions
+## Main Topics
 
-- **ROS2 Humble** over ROS1 Noetic (EOL May 2025)
-- **FAST-LIO2** ([Ericsii/FAST_LIO_ROS2](https://github.com/Caltech-AMBER/FAST_LIO_ROS2)) for LiDAR-inertial SLAM
-- **Nav2 DWB** for local obstacle avoidance (2D costmap + Z-axis supplement)
-- **MAVROS2** for PX4 bridge (vision_pose + setpoint_raw)
-- **ICP scan-to-map** for relocalization against pre-built PCD map
-- **FLU ↔ NED** coordinate conversion in `warehouse_utils::FrameConversions`
-
-## Project Structure
-
-```
-px4_mid360/
-├── config/          # All YAML/JSON configuration files
-│   ├── fast_lio/    # FAST-LIO2 mapping + localization configs
-│   ├── nav2/        # Nav2 params + costmap configs
-│   ├── px4/         # PX4 EKF2 params + offboard params
-│   ├── livox/       # MID360 Ethernet config
-│   ├── mavros2/     # MAVROS2 plugin config
-│   └── waypoints/   # Waypoint YAML files
-├── launch/          # ROS2 launch files (.launch.py)
-│   ├── mapping/     # record_bag, build_map_offline, save_map
-│   └── auto_flight/ # bringup_all, offboard_mission, localize_only
-├── src/             # ROS2 packages (7-8 packages)
-│   ├── warehouse_utils/      # Shared: frame_conversions, yaml_utils
-│   ├── mid360_driver_wrapper/# Livox driver lifecycle wrapper
-│   ├── fast_lio_bridge/      # FAST-LIO2 output relay (TF + odom)
-│   ├── map_manager/          # PCD save/load + PCD→PGM conversion
-│   ├── relocalizer/          # ICP/NDT relocalization
-│   ├── waypoint_planner/     # Waypoint I/O + mission state machine
-│   ├── px4_offboard_bridge/  # vision_pose, offboard_ctrl, cmdvel→setpoint, z_monitor
-│   └── safety_monitor/       # geofence, battery, EKF health, comm watchdog
-└── scripts/         # install, health check, bag processing
+```text
+/odom_filtered
+/cloud_registered
+/cmd_vel
+/cmd_vel_safe
+/fmu/in/offboard_control_mode
+/fmu/in/trajectory_setpoint
+/fmu/in/vehicle_command
+/fmu/in/vehicle_visual_odometry
+/fmu/out/vehicle_status
+/fmu/out/vehicle_command_ack
+/fmu/out/battery_status
+/px4_native/status
+/px4_native/armed
 ```
 
-## Build System
+## Key Dependencies
 
-- **Build tool**: colcon with ament_cmake
-- **Key dependencies**: Livox SDK2 (system), FAST-LIO2, Nav2, MAVROS2, PCL, yaml-cpp
-- **Install**: `./scripts/install_dependencies.sh`
+- ROS 2 Humble
+- PX4 firmware with `uxrce_dds_client`
+- Micro XRCE-DDS Agent
+- `px4_msgs`
+- `px4_ros_com`
+- Livox SDK2 and `livox_ros_driver2`
+- FAST-LIO2
+- EGO-Planner or a ROS 2 adapter that publishes `/planning/local_path`
+- PCL
+- yaml-cpp
 
-## Coordinate Frames
+## Important Rules
 
-```
-map (global, origin=mapping takeoff)
-  ← relocalizer publishes map→odom
-odom (drift-prone)
-  ← FAST-LIO2 publishes odom→base_link
-base_link (drone body, FLU: x=forward, y=left, z=up)
-  ← static transform (LiDAR mount offset)
-lidar_frame
-```
-
-**FLU → NED conversion** (for MAVROS2):
-```
-pos_NED = (y_FLU, x_FLU, -z_FLU)
-yaw_NED = atan2(forward_x_FLU, forward_y_FLU)
-```
-
-## Workflow Summary
-
-### Mapping
-1. Bringup: livox_driver2 + mavros2 + FAST-LIO2(mapping) + bridge + ros2 bag
-2. Manual flight covering all aisles with loop closures
-3. Save PCD → downsample → convert to PGM/YAML for Nav2
-
-### Autonomous Flight
-1. Bringup: All modules + Nav2 (7-8 terminals)
-2. Relocalize: provide initial pose → trigger ICP → verify map→odom
-3. Arm → OFFBOARD → takeoff → Nav2 waypoint following (with DWB avoidance) → RTL
-
-## PX4 Critical Parameters
-
-See `config/px4/ekf2_params.txt`:
-- `EKF2_AID_MASK=280` (vision position+yaw+velocity)
-- `EKF2_MAG_TYPE=5` (disable magnetometer — indoor!)
-- `COM_OBL_ACT=2` (land on offboard loss)
-
-## Nav2 UAV Adaptation
-
-- `use_dwa: false` — UAV is holonomic (no differential-drive constraints)
-- Z-axis handled independently (Nav2 only manages X-Y)
-- `cmdvel_to_setpoint` node converts Nav2 Twist → MAVROS2 PositionTarget
-- `z_axis_monitor` supplements 2D DWB with hanging obstacle detection
-
-## File Naming Conventions
-
-- ROS2 packages: `package.xml` (format 3), `CMakeLists.txt` (ament_cmake)
-- Launch files: `*.launch.py` (Python format)
-- Config files: `*.yaml` (ROS2 parameter format with `ros__parameters`)
-- C++ nodes: standard ROS2 rclcpp patterns with `declare_parameters`
+- Subscribers to PX4 `/fmu/out/*` topics should use PX4-compatible sensor-data QoS.
+- `px4_msgs` must match the PX4 firmware message definitions.
+- Mission code publishes `/cmd_vel`; it should not publish PX4 setpoints directly.
+- `ego_planner_path_follower` follows the external EGO-Planner local path, and `local_3d_safety_filter` is the final safety layer before PX4 setpoint conversion.
+- Validate ENU/FLU to NED/FRD conversion before real flight.

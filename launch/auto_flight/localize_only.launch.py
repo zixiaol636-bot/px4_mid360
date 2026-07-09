@@ -20,10 +20,20 @@ def generate_launch_description():
         default_value="./maps/warehouse_map.pcd",
         description="Path to pre-built PCD map",
     )
+    fast_lio_package_arg = DeclareLaunchArgument(
+        "fast_lio_package",
+        default_value="fast_lio2",
+        description="FAST-LIO ROS 2 package name",
+    )
+    fast_lio_executable_arg = DeclareLaunchArgument(
+        "fast_lio_executable",
+        default_value="fastlio_mapping",
+        description="FAST-LIO localization executable name",
+    )
 
     fast_lio2 = Node(
-        package="fast_lio2",
-        executable="fastlio_mapping",
+        package=LaunchConfiguration("fast_lio_package"),
+        executable=LaunchConfiguration("fast_lio_executable"),
         name="fast_lio2",
         parameters=[
             fast_lio_params,
@@ -57,6 +67,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         map_path_arg,
+        fast_lio_package_arg,
+        fast_lio_executable_arg,
         TimerAction(period=0.0, actions=[fast_lio2, odometry_relay]),
         TimerAction(period=3.0, actions=[map_loader, relocalizer]),
     ])

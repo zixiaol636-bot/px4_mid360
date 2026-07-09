@@ -1,41 +1,53 @@
 #!/usr/bin/env python3
-"""
-建图阶段 — ros2 bag 录制启动文件
-在人工飞行时录制建图所需的全部话题。
-"""
+"""Record mapping topics during manual warehouse flights."""
 
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
     bag_name = DeclareLaunchArgument(
-        'bag_name',
-        default_value='warehouse_mapping',
-        description='Output bag name prefix')
+        "bag_name",
+        default_value="warehouse_mapping",
+        description="Output bag name prefix",
+    )
 
     output_dir = DeclareLaunchArgument(
-        'output_dir',
-        default_value='./bags/',
-        description='Output directory for ros2 bag')
+        "output_dir",
+        default_value="./bags/",
+        description="Output directory for ros2 bag",
+    )
 
     record_topics = [
-        '/livox/lidar',
-        '/livox/imu',
-        '/Odometry',
-        '/cloud_registered',
-        '/tf',
-        '/tf_static',
-        '/mavros/imu/data',
-        '/mavros/local_position/pose',
+        "/livox/lidar",
+        "/livox/imu",
+        "/Odometry",
+        "/odom_filtered",
+        "/cloud_registered",
+        "/cloud_local_obstacles",
+        "/tf",
+        "/tf_static",
+        "/fmu/out/vehicle_status",
+        "/fmu/out/vehicle_local_position",
+        "/fmu/out/vehicle_odometry",
+        "/fmu/out/sensor_combined",
+        "/fmu/out/battery_status",
     ]
 
     bag_record = ExecuteProcess(
-        cmd=['ros2', 'bag', 'record', '-o', LaunchConfiguration('bag_name'),
-             '-s', 'mcap'] + record_topics,
-        cwd=LaunchConfiguration('output_dir'),
-        output='screen')
+        cmd=[
+            "ros2",
+            "bag",
+            "record",
+            "-o",
+            LaunchConfiguration("bag_name"),
+            "-s",
+            "mcap",
+        ] + record_topics,
+        cwd=LaunchConfiguration("output_dir"),
+        output="screen",
+    )
 
     return LaunchDescription([
         bag_name,

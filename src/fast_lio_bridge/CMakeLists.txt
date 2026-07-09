@@ -15,6 +15,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common filters)
+find_package(std_msgs REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 
@@ -27,16 +28,20 @@ ament_target_dependencies(odometry_relay
   tf2_geometry_msgs
   tf2_ros)
 
-add_executable(pointcloud_relay src/pointcloud_relay.cpp)
-target_link_libraries(pointcloud_relay ${PCL_LIBRARIES})
-ament_target_dependencies(pointcloud_relay
+add_executable(cloud_preprocessor src/pointcloud_relay.cpp)
+target_link_libraries(cloud_preprocessor ${PCL_LIBRARIES})
+ament_target_dependencies(cloud_preprocessor
+  nav_msgs
   pcl_conversions
   rclcpp
-  sensor_msgs)
+  sensor_msgs
+  std_msgs
+  tf2
+  tf2_geometry_msgs)
 
 install(TARGETS
   odometry_relay
-  pointcloud_relay
+  cloud_preprocessor
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch

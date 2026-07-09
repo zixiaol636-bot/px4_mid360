@@ -32,10 +32,20 @@ def generate_launch_description():
         default_value="./maps",
         description="Fallback directory when map_path is not set",
     )
+    fast_lio_package_arg = DeclareLaunchArgument(
+        "fast_lio_package",
+        default_value="fast_lio2",
+        description="FAST-LIO ROS 2 package name",
+    )
+    fast_lio_executable_arg = DeclareLaunchArgument(
+        "fast_lio_executable",
+        default_value="fastlio_mapping",
+        description="FAST-LIO mapping executable name",
+    )
 
     fast_lio2 = Node(
-        package="fast_lio2",
-        executable="fastlio_mapping",
+        package=LaunchConfiguration("fast_lio_package"),
+        executable=LaunchConfiguration("fast_lio_executable"),
         name="fast_lio2",
         parameters=[fast_lio_params],
         output="screen",
@@ -56,6 +66,7 @@ def generate_launch_description():
         parameters=[{
             "map_file": LaunchConfiguration("map_path"),
             "save_directory": LaunchConfiguration("save_directory"),
+            "cloud_frame_mode": "world",
         }],
     )
 
@@ -76,6 +87,8 @@ def generate_launch_description():
         bag_path_arg,
         map_path_arg,
         save_directory_arg,
+        fast_lio_package_arg,
+        fast_lio_executable_arg,
         fast_lio2,
         odometry_relay,
         map_saver,

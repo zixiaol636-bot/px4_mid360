@@ -3,21 +3,20 @@
 <package format="3">
   <name>relocalizer</name>
   <version>0.1.0</version>
-  <description>基于 ICP 的重定位：将当前 LiDAR 扫描与已加载的地图对齐，并发布 map->odom TF</description>
+  <description>ICP relocalization node that aligns live LiDAR scans to the loaded map and publishes map-to-odom TF.</description>
   <maintainer email="user@example.com">user</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>geometry_msgs</depend>
+  <depend>pcl_conversions</depend>
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
-  <depend>nav_msgs</depend>
+  <depend>std_srvs</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
-  <depend>pcl_conversions</depend>
-  <depend>warehouse_utils</depend>
-  <depend>geometry_msgs</depend>
-  <depend>std_srvs</depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

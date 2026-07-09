@@ -1,2 +1,2 @@
-# WaypointArray.msg -- 任务的有序航点列表
-Waypoint[] waypoints
+# Ordered waypoint list for a mission.
+waypoint_planner/Waypoint[] waypoints

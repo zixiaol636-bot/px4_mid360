@@ -5,7 +5,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, LogInfo, TimerAction
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
@@ -39,6 +39,11 @@ def generate_launch_description():
         default_value="120.0",
         description="Maximum allowed seconds per waypoint leg before RTL",
     )
+    use_ego_planner_arg = DeclareLaunchArgument(
+        "use_ego_planner",
+        default_value="true",
+        description="true: send waypoint goals to EGO-Planner; false: publish direct velocity fallback",
+    )
 
     mission_executor = Node(
         package="waypoint_planner",
@@ -54,6 +59,24 @@ def generate_launch_description():
             ),
             "max_navigate_timeout": ParameterValue(
                 LaunchConfiguration("max_navigate_timeout"), value_type=float
+            ),
+            "goal_pose_topic": "/planning/goal_pose",
+            "publish_goal_pose": True,
+            "publish_cmd_vel": ParameterValue(
+                PythonExpression([
+                    "'False' if '",
+                    LaunchConfiguration("use_ego_planner"),
+                    "'.lower() in ('1', 'true', 'yes', 'on') else 'True'",
+                ]),
+                value_type=bool,
+            ),
+            "cmd_vel_topic": ParameterValue(
+                PythonExpression([
+                    "'/mission/direct_cmd_vel_unused' if '",
+                    LaunchConfiguration("use_ego_planner"),
+                    "'.lower() in ('1', 'true', 'yes', 'on') else '/cmd_vel_planned'",
+                ]),
+                value_type=str,
             ),
         }],
         output="screen",
@@ -76,6 +99,7 @@ def generate_launch_description():
         takeoff_altitude_arg,
         waypoint_tolerance_arg,
         navigate_timeout_arg,
+        use_ego_planner_arg,
         LogInfo(msg="=== Starting autonomous mission executor ==="),
         mission_executor,
         TimerAction(period=3.0, actions=[mission_start]),

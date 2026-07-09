@@ -1,5 +1,6 @@
 #include <memory>
 #include <mutex>
+#include <filesystem>
 #include <string>
 
 #include <Eigen/Dense>
@@ -12,6 +13,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
@@ -27,6 +29,7 @@ public:
     this->declare_parameter<std::string>("save_directory", "/tmp");
     this->declare_parameter<std::string>("cloud_topic", "/cloud_registered");
     this->declare_parameter<std::string>("odom_topic", "/Odometry");
+    this->declare_parameter<std::string>("cloud_frame_mode", "world");
 
     cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
       this->get_parameter("cloud_topic").as_string(), rclcpp::SensorDataQoS(),
@@ -54,26 +57,42 @@ public:
 private:
   void cloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
   {
-    nav_msgs::msg::Odometry odom;
-    {
-      std::lock_guard<std::mutex> lock(odom_mutex_);
-      if (!has_odom_) {
-        return;
-      }
-      odom = latest_odom_;
-    }
-
     CloudT cloud;
     pcl::fromROSMsg(*msg, cloud);
     if (cloud.empty()) {
       return;
     }
 
+    const auto cloud_frame_mode = this->get_parameter("cloud_frame_mode").as_string();
+    CloudT cloud_to_add;
+    if (cloud_frame_mode == "body") {
+      nav_msgs::msg::Odometry odom;
+      {
+        std::lock_guard<std::mutex> lock(odom_mutex_);
+        if (!has_odom_) {
+          return;
+        }
+        odom = latest_odom_;
+      }
+      cloud_to_add = transform_body_cloud_to_world(cloud, odom);
+    } else {
+      cloud_to_add = cloud;
+    }
+
+    std::lock_guard<std::mutex> lock(map_mutex_);
+    *global_map_ += cloud_to_add;
+  }
+
+  CloudT transform_body_cloud_to_world(
+    const CloudT & cloud,
+    const nav_msgs::msg::Odometry & odom) const
+  {
     tf2::Quaternion q(
       odom.pose.pose.orientation.x,
       odom.pose.pose.orientation.y,
       odom.pose.pose.orientation.z,
       odom.pose.pose.orientation.w);
+    q.normalize();
     tf2::Matrix3x3 rotation(q);
 
     Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
@@ -88,9 +107,7 @@ private:
 
     CloudT transformed;
     pcl::transformPointCloud(cloud, transformed, transform);
-
-    std::lock_guard<std::mutex> lock(map_mutex_);
-    *global_map_ += transformed;
+    return transformed;
   }
 
   bool save_map()
@@ -105,6 +122,11 @@ private:
     if (filepath.empty()) {
       filepath = this->get_parameter("save_directory").as_string() + "/map_" +
         std::to_string(this->now().nanoseconds()) + ".pcd";
+    }
+
+    const auto parent = std::filesystem::path(filepath).parent_path();
+    if (!parent.empty()) {
+      std::filesystem::create_directories(parent);
     }
 
     if (pcl::io::savePCDFileBinary(filepath, *global_map_) != 0) {

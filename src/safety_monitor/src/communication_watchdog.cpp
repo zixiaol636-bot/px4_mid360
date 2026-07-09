@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 
-#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/bool.hpp>
 
@@ -12,14 +12,14 @@ public:
   CommunicationWatchdog()
   : Node("communication_watchdog"), last_msg_time_(this->now())
   {
-    this->declare_parameter<std::string>("heartbeat_topic", "/mavros/local_position/pose");
+    this->declare_parameter<std::string>("heartbeat_topic", "/px4_native/status");
     this->declare_parameter<double>("heartbeat_timeout", 1.0);
     this->declare_parameter<double>("failsafe_timeout", 5.0);
     this->declare_parameter<double>("watchdog_rate", 10.0);
 
-    heartbeat_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+    heartbeat_sub_ = this->create_subscription<std_msgs::msg::String>(
       this->get_parameter("heartbeat_topic").as_string(), rclcpp::QoS(10),
-      [this](const geometry_msgs::msg::PoseStamped::SharedPtr) { last_msg_time_ = this->now(); });
+      [this](const std_msgs::msg::String::SharedPtr) { last_msg_time_ = this->now(); });
 
     comms_pub_ = this->create_publisher<std_msgs::msg::Bool>(
       "/safety/comms_ok", rclcpp::QoS(1).transient_local());
@@ -54,7 +54,7 @@ private:
     }
   }
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr heartbeat_sub_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr heartbeat_sub_;
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr comms_pub_;
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr failsafe_pub_;
   rclcpp::TimerBase::SharedPtr timer_;

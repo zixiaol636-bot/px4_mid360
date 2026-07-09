@@ -8,6 +8,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
@@ -24,6 +25,7 @@ ament_target_dependencies(icp_relocalizer
   rclcpp
   sensor_msgs
   std_srvs
+  tf2
   tf2_ros)
 
 install(TARGETS

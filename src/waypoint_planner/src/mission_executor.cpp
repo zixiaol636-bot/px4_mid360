@@ -12,11 +12,13 @@
 #include <vector>
 
 #include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <warehouse_utils/yaml_utils.h>
@@ -50,6 +52,9 @@ public:
     this->declare_parameter<double>("max_navigate_timeout", 120.0);
     this->declare_parameter<std::string>("map_frame", "map");
     this->declare_parameter<double>("control_rate", 20.0);
+    this->declare_parameter<std::string>("goal_pose_topic", "/planning/goal_pose");
+    this->declare_parameter<bool>("publish_goal_pose", true);
+    this->declare_parameter<bool>("publish_cmd_vel", true);
 
     takeoff_altitude_ = this->get_parameter("takeoff_altitude").as_double();
     waypoint_arrival_tolerance_ =
@@ -67,6 +72,8 @@ public:
     this->declare_parameter<std::string>("cmd_vel_topic", "/cmd_vel");
     cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
       this->get_parameter("cmd_vel_topic").as_string(), rclcpp::QoS(10));
+    goal_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
+      this->get_parameter("goal_pose_topic").as_string(), rclcpp::QoS(1).transient_local());
     state_pub_ = this->create_publisher<std_msgs::msg::String>(
       "/mission/state", rclcpp::QoS(10));
 
@@ -231,7 +238,7 @@ private:
         execute_rtl();
         break;
       case State::PAUSED:
-        send_zero_velocity();
+        hold_current_position();
         break;
     }
   }
@@ -254,9 +261,13 @@ private:
       return;
     }
 
+    auto takeoff_pose = home_pose_;
+    takeoff_pose.position.z = target_altitude;
+    publish_goal_pose(takeoff_pose);
+
     geometry_msgs::msg::Twist cmd;
     cmd.linear.z = climb_rate;
-    cmd_vel_pub_->publish(cmd);
+    publish_velocity_command(cmd);
   }
 
   void execute_navigate()
@@ -348,9 +359,13 @@ private:
       return;
     }
 
+    auto landing_pose = home_pose_;
+    landing_pose.position.z = landing_target_z;
+    publish_goal_pose(landing_pose);
+
     geometry_msgs::msg::Twist cmd;
     cmd.linear.z = std::clamp(dz * 0.3, -0.5, 0.3);
-    cmd_vel_pub_->publish(cmd);
+    publish_velocity_command(cmd);
   }
 
   void enter_rtl(const std::string & reason)
@@ -372,6 +387,8 @@ private:
     double max_z_speed,
     double max_yaw_rate)
   {
+    publish_goal_pose(target_pose);
+
     const double dx = target_pose.position.x - current_odom_.pose.pose.position.x;
     const double dy = target_pose.position.y - current_odom_.pose.pose.position.y;
     const double dz = target_pose.position.z - current_odom_.pose.pose.position.z;
@@ -399,7 +416,7 @@ private:
       shortest_angular_distance(current_yaw, desired_yaw),
       -max_yaw_rate,
       max_yaw_rate);
-    cmd_vel_pub_->publish(cmd);
+    publish_velocity_command(cmd);
   }
 
   void transition_to(State next_state, const std::string & reason)
@@ -477,7 +494,34 @@ private:
   void send_zero_velocity()
   {
     geometry_msgs::msg::Twist cmd;
+    publish_velocity_command(cmd);
+  }
+
+  void hold_current_position()
+  {
+    publish_goal_pose(current_odom_.pose.pose);
+    send_zero_velocity();
+  }
+
+  void publish_velocity_command(const geometry_msgs::msg::Twist & cmd)
+  {
+    if (!this->get_parameter("publish_cmd_vel").as_bool()) {
+      return;
+    }
     cmd_vel_pub_->publish(cmd);
+  }
+
+  void publish_goal_pose(const geometry_msgs::msg::Pose & target_pose)
+  {
+    if (!this->get_parameter("publish_goal_pose").as_bool()) {
+      return;
+    }
+
+    geometry_msgs::msg::PoseStamped msg;
+    msg.header.stamp = this->now();
+    msg.header.frame_id = this->get_parameter("map_frame").as_string();
+    msg.pose = target_pose;
+    goal_pose_pub_->publish(msg);
   }
 
   void publish_state()
@@ -506,6 +550,7 @@ private:
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr state_pub_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_srv_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr pause_srv_;
