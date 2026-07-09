@@ -6,8 +6,6 @@
 #include <stdexcept>
 #include <string>
 
-//看快快快
-// ¿ªÆô
 namespace warehouse_utils
 {
   namespace
